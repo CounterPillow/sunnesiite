@@ -28,8 +28,7 @@ COLOURS = {
 
 
 def fetch_peak(d1, d2):
-    # astimezone needed here because python is dumb (offset aware timedelta)
-    d_now = datetime.utcnow().astimezone(timezone.utc)
+    d_now = datetime.now(timezone.utc)
     diff_s = ceil((d_now - d1).total_seconds())
 
     params = urlencode(
