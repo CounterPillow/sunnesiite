@@ -98,7 +98,7 @@ def eink():
     draw = ImageDraw.Draw(im)
 
     MAX_Y = 5000.0
-    TICK_POWER_STEP = 1000
+    TICK_POWER_STEP = 500
     TICK_TIME_STEP = 1
     TICK_LEN = 5
     PLOT_HEIGHT = 400
