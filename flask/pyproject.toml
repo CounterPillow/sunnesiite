@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sunnesiite"
+version = "1.0.0"
+authors = [
+    { name="Nicolas Frattaroli", email="ovdev@fratti.ch" },
+]
+description = "SolarAPI to victoriametrics to Inkplate service"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: European Union Public Licence 1.2 (EUPL 1.2)",
+    "Operating System :: OS Independent",
+    "Framework :: Flask",
+]
+dependencies = [
+    "Flask >= 2.2.0, < 3",
+    "toml >= 0.10.2",
+    "Pillow == 9.*",
+]
+
+[tool.setuptools]
+packages = [
+    "sunnesiite",
+]
