@@ -7,7 +7,7 @@ import urllib.request
 from urllib.parse import urljoin, urlencode
 
 from flask import (
-    Blueprint, current_app, request, Response
+    Blueprint, current_app, request, Response, send_file
 )
 from PIL import Image, ImageDraw, ImageFont
 
@@ -151,9 +151,8 @@ def eink():
     bio = BytesIO()
     im.save(bio, "PNG")
 
-    resp = Response(status=200, mimetype="image/png", content_type="image/png")
-    resp.set_data(bio.getvalue())
-    bio.close()
+    bio.seek(0)
+    resp = send_file(bio, mimetype="image/png")
 
     return resp
 
