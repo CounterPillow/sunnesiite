@@ -30,6 +30,28 @@ COLOURS = {
 }
 
 
+def fetch_day_energy(d1: datetime, d2: datetime) -> int:
+    params = urlencode(
+        {
+            "start": d1.isoformat(),
+            "end": d2.isoformat(),
+            "query": 'power_day_energy{location="home"}',
+        }
+    )
+
+    vm_url = urljoin(current_app.config["SUNNESIITE_VM_URI"],
+                     f"/api/v1/query?{params}")
+
+    resp = urllib.request.urlopen(vm_url)
+    j = json.loads(resp.read().decode('utf-8'))
+    if j.get("status", "") != "success":
+        raise Exception("Request failed")
+    try:
+        return int(j["data"]["result"][0]["value"][1])
+    except (KeyError, IndexError):
+        return 0
+
+
 def fetch_peak(d1: datetime, d2: datetime) -> Tuple[int, int]:
     ts: int
     val: int
@@ -163,8 +185,13 @@ def eink():
     # peak text
     peak_ts, peak_val = fetch_peak(d1, d2)
     if peak_ts >= 0:
-        draw.text((X_OFFSET + 10, 10), f"Peak: {peak_val} W", anchor="lt", font=label_fnt,
-                  fill=COLOURS["green"])
+        draw.text((X_OFFSET + 10, 10), f"Peak: {peak_val} W", anchor="lt",
+                  font=label_fnt, fill=COLOURS["green"])
+
+    # Energy produced today
+    day_energy = fetch_day_energy(d1, d2)
+    draw.text((X_OFFSET + 160, 10), f"Produced Today: {day_energy} Wh", anchor="lt",
+              font=label_fnt, fill=COLOURS["green"])
 
 
     bio = BytesIO()
@@ -194,7 +221,7 @@ def solardata():
 
     vm_url = urljoin(current_app.config["SUNNESIITE_VM_URI"],
                      "/write?precision=s")
-    vm_data = f"power,location=home power={pac} {int(ts.timestamp())}".encode('utf-8')
+    vm_data = f"power,location=home power={pac},day_energy={day_energy} {int(ts.timestamp())}".encode('utf-8')
     req = urllib.request.Request(vm_url, data=vm_data, method='POST')
     resp = urllib.request.urlopen(req)
 
