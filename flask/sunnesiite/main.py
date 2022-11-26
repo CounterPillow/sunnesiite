@@ -6,6 +6,7 @@ import os.path
 from typing import Tuple, List
 import urllib.request
 from urllib.parse import urljoin, urlencode
+from urllib.error import HTTPError
 
 from flask import (
     Blueprint, current_app, request, Response, send_file
@@ -42,7 +43,10 @@ def fetch_day_energy(d1: datetime, d2: datetime) -> int:
     vm_url = urljoin(current_app.config["SUNNESIITE_VM_URI"],
                      f"/api/v1/query?{params}")
 
-    resp = urllib.request.urlopen(vm_url)
+    try:
+        resp = urllib.request.urlopen(vm_url)
+    except HTTPError:
+        return 0
     j = json.loads(resp.read().decode('utf-8'))
     if j.get("status", "") != "success":
         raise Exception("Request failed")
@@ -75,7 +79,10 @@ def fetch_peak(d1: datetime, d2: datetime) -> Tuple[int, int]:
     vm_url = urljoin(current_app.config["SUNNESIITE_VM_URI"],
                      f"/api/v1/query?{params}")
 
-    resp = urllib.request.urlopen(vm_url)
+    try:
+        resp = urllib.request.urlopen(vm_url)
+    except HTTPError:
+        return (-1, 0)
     j = json.loads(resp.read().decode('utf-8'))
     if j.get("status", "") != "success":
         raise Exception("Request failed")
