@@ -3,6 +3,7 @@ from io import BytesIO
 import json
 from math import ceil
 import os.path
+from typing import Tuple, List
 import urllib.request
 from urllib.parse import urljoin, urlencode
 
@@ -27,7 +28,10 @@ COLOURS = {
 }
 
 
-def fetch_peak(d1, d2):
+def fetch_peak(d1: datetime, d2: datetime) -> Tuple[int, int]:
+    ts: int
+    val: int
+
     d_now = datetime.now(timezone.utc)
     diff_s = ceil((d_now - d1).total_seconds())
 
@@ -55,7 +59,9 @@ def fetch_peak(d1, d2):
     return (ts, int(val))
 
 
-def fetch_data(d1, d2):
+def fetch_data(d1: datetime, d2: datetime) -> Tuple[List[int], List[int]]:
+    data_ts: List[int]
+    data_val: List[int]
 
     params = urlencode(
         {
