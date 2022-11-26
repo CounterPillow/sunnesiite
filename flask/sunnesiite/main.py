@@ -12,6 +12,8 @@ from flask import (
 )
 from PIL import Image, ImageDraw, ImageFont
 
+from . import cache
+
 
 bp = Blueprint('main', __name__)
 
@@ -93,6 +95,7 @@ def fetch_data(d1: datetime, d2: datetime) -> Tuple[List[int], List[int]]:
 
 
 @bp.route("/eink.png", methods=["GET"])
+@cache.cached(timeout=60)
 def eink():
     d1 = datetime.now().replace(hour=6, minute=0, second=0, microsecond=0)
     d2 = d1.replace(hour=22)

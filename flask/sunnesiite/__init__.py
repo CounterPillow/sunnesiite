@@ -1,5 +1,9 @@
 from flask import Flask
+from flask_caching import Cache
 import toml
+
+
+cache = Cache()
 
 
 def create_app(test_config=None):
@@ -10,5 +14,8 @@ def create_app(test_config=None):
     from . import main
 
     app.register_blueprint(main.bp, url_prefix=app.config["SUNNESIITE_PREFIX"])
+
+    # Flask-Caching
+    cache.init_app(app, config=app.config)
 
     return app

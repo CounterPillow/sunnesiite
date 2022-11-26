@@ -22,6 +22,7 @@ dependencies = [
     "Flask >= 2.2.0, < 3",
     "toml >= 0.10.2",
     "Pillow == 9.*",
+    "Flask-Caching == 2.*",
 ]
 
 [tool.setuptools]
