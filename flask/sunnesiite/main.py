@@ -41,7 +41,12 @@ def fetch_peak(d1: datetime, d2: datetime) -> Tuple[int, int]:
         {
             "start": d1.isoformat(),
             "end": d2.isoformat(),
-            "query": 'max_over_time(power_power{location="home"}[' + str(diff_s) + 's])',
+            "query": ('union('
+                      'max_over_time(power_power{location="home"}[' + str(diff_s) + 's]),'
+                      'label_set('
+                      'tmax_over_time(power_power{location="home"}[' + str(diff_s) + 's]),'
+                      '"__name__","peak_timestamp")'
+                      ')'),
         }
     )
 
@@ -54,11 +59,17 @@ def fetch_peak(d1: datetime, d2: datetime) -> Tuple[int, int]:
         raise Exception("Request failed")
 
     try:
-        ts, val = j["data"]["result"][0]["value"]
+        ts = -1
+        val = 0
+        for res in j["data"]["result"]:
+            if res["metric"]["__name__"] == "peak_timestamp":
+                ts = int(res["value"][1])
+            elif res["metric"]["__name__"] == "power_power":
+                val = int(res["value"][1])
     except IndexError:
         ts = -1
         val = 0
-    return (ts, int(val))
+    return (ts, val)
 
 
 def fetch_data(d1: datetime, d2: datetime) -> Tuple[List[int], List[int]]:
@@ -152,7 +163,7 @@ def eink():
     # peak text
     peak_ts, peak_val = fetch_peak(d1, d2)
     if peak_ts >= 0:
-        draw.text((X_OFFSET + 240, 20), f"Peak: {peak_val} W", anchor="mt", font=label_fnt,
+        draw.text((X_OFFSET + 10, 10), f"Peak: {peak_val} W", anchor="lt", font=label_fnt,
                   fill=COLOURS["green"])
 
 
