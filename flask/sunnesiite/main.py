@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from io import BytesIO
+from itertools import repeat
 import json
 from math import ceil
 import os.path
@@ -29,6 +30,11 @@ COLOURS = {
     "orange": (232, 126, 0),
     "violet": (194, 164, 244),
 }
+
+
+def graph_line(draw, x1, y1, x2, fill):
+    it = zip(range(x1, x2, 2), repeat(y1))
+    draw.point(list(it), fill=fill)
 
 
 def fetch_day_energy(d1: datetime, d2: datetime) -> int:
@@ -157,17 +163,6 @@ def eink():
     X_OFFSET = 80
     Y_OFFSET = 20
 
-    y1 = 0
-    y2 = 0
-    x1 = 0
-    x2 = 0
-    for i in range(len(val) - 1):
-        x1 = X_OFFSET + int((ts[i] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
-        x2 = X_OFFSET + int((ts[i + 1] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
-        y1 = Y_OFFSET + PLOT_HEIGHT - int(val[i] / MAX_Y * PLOT_HEIGHT)
-        y2 = Y_OFFSET + PLOT_HEIGHT - int(val[i + 1] / MAX_Y * PLOT_HEIGHT)
-        draw.line((x1, y1, x2, y2), fill=COLOURS["red"],
-                  width=3)
 
     # Y axis
     draw.line((X_OFFSET - 1, Y_OFFSET, X_OFFSET - 1, PLOT_HEIGHT + Y_OFFSET),
@@ -184,6 +179,7 @@ def eink():
                   fill=COLOURS["black"])
         draw.text((X_OFFSET - 1 - TICK_LEN - 4, tick_y), f"{tick} W", anchor="rm",
                   font=label_fnt, fill=COLOURS["black"])
+        graph_line(draw, X_OFFSET, tick_y, X_OFFSET + 480, COLOURS["black"])
 
     for time_tick in range(6, 22 + 1, TICK_TIME_STEP):
         tick_x = int((time_tick - 6) / 16.0 * 480) + X_OFFSET - 1
@@ -191,6 +187,18 @@ def eink():
                   fill=COLOURS["black"])
         draw.text((tick_x, PLOT_HEIGHT + Y_OFFSET + TICK_LEN + 4), f"{time_tick}",
                   anchor="mt", font=label_fnt, fill=COLOURS["black"])
+
+    y1 = 0
+    y2 = 0
+    x1 = 0
+    x2 = 0
+    for i in range(len(val) - 1):
+        x1 = X_OFFSET + int((ts[i] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
+        x2 = X_OFFSET + int((ts[i + 1] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
+        y1 = Y_OFFSET + PLOT_HEIGHT - int(val[i] / MAX_Y * PLOT_HEIGHT)
+        y2 = Y_OFFSET + PLOT_HEIGHT - int(val[i + 1] / MAX_Y * PLOT_HEIGHT)
+        draw.line((x1, y1, x2, y2), fill=COLOURS["red"],
+                  width=3)
 
     # last data point, the min keeps it above the axis
     if len(val) > 0:
@@ -200,12 +208,12 @@ def eink():
     # peak text
     peak_ts, peak_val = fetch_peak(d1, d2)
     if peak_ts >= 0:
-        draw.text((X_OFFSET + 10, 10), f"Peak: {peak_val} W", anchor="lt",
+        draw.text((X_OFFSET + 10, 5), f"Peak: {peak_val} W", anchor="lt",
                   font=label_fnt, fill=COLOURS["green"])
 
     # Energy produced today
     day_energy = fetch_day_energy(d1, d2)
-    draw.text((X_OFFSET + 160, 10), f"Produced Today: {day_energy} Wh", anchor="lt",
+    draw.text((X_OFFSET + 160, 5), f"Produced Today: {day_energy} Wh", anchor="lt",
               font=label_fnt, fill=COLOURS["green"])
 
 
