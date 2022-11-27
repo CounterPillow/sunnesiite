@@ -159,6 +159,8 @@ def eink():
 
     y1 = 0
     y2 = 0
+    x1 = 0
+    x2 = 0
     for i in range(len(val) - 1):
         x1 = X_OFFSET + int((ts[i] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
         x2 = X_OFFSET + int((ts[i + 1] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
