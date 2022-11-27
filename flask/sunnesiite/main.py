@@ -137,11 +137,15 @@ def fetch_data(d1: datetime, d2: datetime) -> Tuple[List[int], List[int]]:
 @bp.route("/eink.png", methods=["GET"])
 @cache.cached(timeout=60)
 def eink():
+    localtz = datetime.now(timezone.utc).astimezone().tzinfo
     d1 = datetime.now().replace(hour=6, minute=0, second=0, microsecond=0)
     d2 = d1.replace(hour=22)
     d1 = d1.astimezone(timezone.utc)
     d2 = d2.astimezone(timezone.utc)
     ts, val = fetch_data(d1, d2)
+    d1 = d1.astimezone(localtz)
+    d2 = d2.astimezone(localtz)
+
     im = Image.new('RGB', (600, 448), (255, 255, 255))
     draw = ImageDraw.Draw(im)
 
@@ -156,9 +160,11 @@ def eink():
     y1 = 0
     y2 = 0
     for i in range(len(val) - 1):
+        x1 = X_OFFSET + int((ts[i] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
+        x2 = X_OFFSET + int((ts[i + 1] - d1.timestamp()) / (d2.timestamp() - d1.timestamp()) * 480)
         y1 = Y_OFFSET + PLOT_HEIGHT - int(val[i] / MAX_Y * PLOT_HEIGHT)
         y2 = Y_OFFSET + PLOT_HEIGHT - int(val[i + 1] / MAX_Y * PLOT_HEIGHT)
-        draw.line((i + X_OFFSET, y1, i+1 + X_OFFSET, y2), fill=COLOURS["red"],
+        draw.line((x1, y1, x2, y2), fill=COLOURS["red"],
                   width=3)
 
     # Y axis
@@ -186,7 +192,7 @@ def eink():
 
     # last data point, the min keeps it above the axis
     if len(val) > 0:
-        draw.text((X_OFFSET + len(val) + 5, min(y2, PLOT_HEIGHT + Y_OFFSET - 10)), f"{val[len(val) - 1]} W", font=label_fnt,
+        draw.text((x2 + 10, min(y2, PLOT_HEIGHT + Y_OFFSET - 10)), f"{val[len(val) - 1]} W", font=label_fnt,
                 anchor="lm", fill=COLOURS["red"])
 
     # peak text
