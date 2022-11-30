@@ -23,6 +23,56 @@
 
 Inkplate display;
 
+/* From https://github.com/SolderedElectronics/Inkplate-Arduino-library/issues/169#issuecomment-1331716568 */
+double readBatteryVoltage()
+{
+    uint16_t rawADC;
+    double voltage;
+  
+    // Set PCAL P1-1 to output. Do a ready-modify-write operation.
+    pcal6416ModifyReg(0x07, 1, 0);
+
+    // Set pin P1-1 to the high -> enable MOSFET for battery voltage measurement.
+    pcal6416ModifyReg(0x03, 1, 1);
+
+    // Wait a little bit
+    delay(5);
+
+    // Read analog voltage. Battery measurement is connected to the GPIO35 on the ESP32.
+    rawADC = analogRead(35);
+
+    // Turn off the MOSFET.
+    pcal6416ModifyReg(0x03, 1, 0);
+
+    // Calculate the voltage
+    voltage = rawADC / 4095.0 * 3.3 * 2;
+
+    // Return voltage.
+    return voltage;
+}
+
+void pcal6416ModifyReg(uint8_t _reg, uint8_t _bit, uint8_t _state)
+{
+    uint8_t reg;
+    uint8_t mask;
+    const uint8_t pcalAddress = 0b00100000;
+  
+    Wire.beginTransmission(pcalAddress);
+    Wire.write(_reg);
+    Wire.endTransmission();
+
+    Wire.requestFrom(pcalAddress, (uint8_t) 1);
+    reg = Wire.read();
+
+    mask = 1 << _bit;
+    reg = ((reg & ~mask) | (_state << _bit));
+  
+    Wire.beginTransmission(pcalAddress);
+    Wire.write(_reg);
+    Wire.write(reg);
+    Wire.endTransmission();
+}
+
 void setup()
 {
     int ret = 0;
@@ -39,7 +89,7 @@ void setup()
     display.setCursor(500, 20);
     display.setTextColor(INKPLATE_BLUE);
     display.setTextSize(2);
-    display.print(display.readBattery(), 2);
+    display.print(readBatteryVoltage(), 2);
     display.print("V");
 
     display.display();
