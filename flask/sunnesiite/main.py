@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from itertools import repeat
 import json
@@ -8,9 +8,10 @@ from typing import Tuple, List
 import urllib.request
 from urllib.parse import urljoin, urlencode
 from urllib.error import HTTPError
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import (
-    Blueprint, current_app, request, Response, send_file
+    Blueprint, current_app, jsonify, request, Response, send_file
 )
 from PIL import Image, ImageDraw, ImageFont
 
@@ -252,3 +253,36 @@ def solardata():
         return ("Error submitting to VM\n", 500)
 
     return "Ok\n"
+
+
+@bp.route("/untildaytime/<tzstr_1>/<tzstr_2>", methods=["GET"])
+def until_daytime(tzstr_1, tzstr_2):
+    d = {
+            "status": "success",
+            "seconds": 0
+    }
+    try:
+        tz = ZoneInfo(f"{tzstr_1}/{tzstr_2}")
+    except ZoneInfoNotFoundError:
+        return (jsonify({"status":"error", "reason":"Invalid Timezone"}), 400)
+
+    now = datetime.now(tz)
+    morning = now.replace(hour=6, minute=0, second=0, microsecond=0)
+    evening = now.replace(hour=22, minute=0, second=0, microsecond=0)
+    nextmorning = morning + timedelta(days=1)
+
+    diff = None
+    # before 6, go to sleep until 6
+    if now < morning:
+        diff = morning - now
+    # between 6 and 22, we're roughly in daytime
+    elif now < evening:
+        diff = None
+    # after 22 and before 6 the next day, sleep until 6 the next day
+    elif now < nextmorning:
+        diff = nextmorning - now
+
+    if diff:
+        d["seconds"] = int(diff.total_seconds())
+
+    return jsonify(d)
