@@ -248,8 +248,7 @@ def solardata():
     req = urllib.request.Request(vm_url, data=vm_data, method='POST')
     resp = urllib.request.urlopen(req)
 
-    # Switch to just "status" once we're Python 3.9+
-    if resp.code >= 300 or resp.code < 200:
+    if resp.status >= 300 or resp.status < 200:
         return ("Error submitting to VM\n", 500)
 
     return "Ok\n"
