@@ -48,7 +48,6 @@ void setup()
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);
 
     //Serial.println("Going to sleep");
-    display.setMCPForLowPower();
     display.setPanelDeepSleep(false);
     esp_sleep_enable_timer_wakeup(REFRESH_INTERVAL_MINS * 60ll * 1000ll * 1000ll);
     esp_deep_sleep_start();
