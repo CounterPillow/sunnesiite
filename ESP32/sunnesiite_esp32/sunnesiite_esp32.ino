@@ -16,6 +16,7 @@
 #error "Wrong board selection for this program, please select Inkplate 6COLOR in the boards menu."
 #endif
 
+#include <ArduinoJson.h>
 #include "Inkplate.h"
 #include "config.h"
 
@@ -73,18 +74,57 @@ void pcal6416ModifyReg(uint8_t _reg, uint8_t _bit, uint8_t _state)
     Wire.endTransmission();
 }
 
+int fetchUntilDaytimeValue(const char* url, const char* timezone)
+{
+    char buffer[256];
+    StaticJsonDocument<JSON_OBJECT_SIZE(2)> doc;
+    int32_t resp_len = 1024;
+
+    if (sizeof(url) + sizeof(timezone) >= 256) { // 256 is valid because we chop off one \0 there
+        return -1;
+    }
+
+    if (sizeof(url) < 1) {
+        return -2;
+    }
+
+    strncpy(buffer, url, sizeof(buffer));
+    if (url[sizeof(url) - 1] != '/') {
+        strncat(buffer, "/", sizeof(buffer) - 1);
+    }
+    strncat(buffer, timezone, sizeof(buffer) - 1);
+
+    uint8_t* resp = display.downloadFile(buffer, &resp_len);
+    if (resp == NULL) {
+        return -3;
+    }
+
+    DeserializationError error = deserializeJson(doc, (char*) resp, resp_len);
+    free(resp);
+    if (error) {
+        return -4;
+    }
+
+    if (strncmp(doc["status"] | "error", "error", 5) == 0) {
+        return -5;
+    }
+
+    return doc["seconds"];
+}
+
 void setup()
 {
     int ret = 0;
-    //Serial.begin(115200);
+    int sleep_time;
+    Serial.begin(115200);
     display.begin();
 
     // Join wifi
     display.joinAP(WIFI_SSID, WIFI_PASSWORD);
-    //Serial.println("joined wifi");
+    Serial.println("joined wifi");
 
     ret = display.drawImage(EINK_URL, display.PNG, 0, 0, true, false);
-    //Serial.println(ret);
+    Serial.println(ret);
 
     display.setCursor(500, 20);
     display.setTextColor(INKPLATE_BLUE);
@@ -94,12 +134,23 @@ void setup()
 
     display.display();
 
+    sleep_time = fetchUntilDaytimeValue(API_URL, TIMEZONE);
+    if (sleep_time <= 0) {
+        if (sleep_time < 0) {
+            Serial.print(F("Something went fucky: "));
+            Serial.println(sleep_time);
+        }
+        sleep_time = REFRESH_INTERVAL_MINS * 60;
+    }
+
     // Enable wakeup from deep sleep on gpio 36 (wake button)
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);
 
-    //Serial.println("Going to sleep");
+    Serial.print("Going to sleep for ");
+    Serial.print(sleep_time);
+    Serial.println(" seconds");
     display.setPanelDeepSleep(false);
-    esp_sleep_enable_timer_wakeup(REFRESH_INTERVAL_MINS * 60ll * 1000ll * 1000ll);
+    esp_sleep_enable_timer_wakeup(sleep_time * 1000ll * 1000ll);
     esp_deep_sleep_start();
 }
 
