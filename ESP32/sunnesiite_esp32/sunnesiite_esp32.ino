@@ -27,7 +27,6 @@ Inkplate display;
 /* From https://github.com/SolderedElectronics/Inkplate-Arduino-library/issues/169#issuecomment-1331716568 */
 double readBatteryVoltage()
 {
-    uint16_t rawADC;
     double voltage;
   
     // Set PCAL P1-1 to output. Do a ready-modify-write operation.
@@ -40,16 +39,12 @@ double readBatteryVoltage()
     delay(5);
 
     // Read analog voltage. Battery measurement is connected to the GPIO35 on the ESP32.
-    rawADC = analogRead(35);
+    uint32_t batt_mv = analogReadMilliVolts(35);
 
     // Turn off the MOSFET.
     pcal6416ModifyReg(0x03, 1, 0);
 
-    // Calculate the voltage
-    voltage = rawADC / 4095.0 * 3.3 * 2;
-
-    // Return voltage.
-    return voltage;
+    return (double(batt_mv) / 1000 * 2);
 }
 
 void pcal6416ModifyReg(uint8_t _reg, uint8_t _bit, uint8_t _state)
