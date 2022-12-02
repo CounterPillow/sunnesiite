@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "Flask >= 2.2.0, < 3",
-    "toml >= 0.10.2",
+    "tomli == 2.* ; python_version < \"3.11\"",
     "Pillow == 9.*",
     "Flask-Caching == 2.*",
 ]
