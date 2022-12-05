@@ -75,3 +75,58 @@ $ flask --app sunnesiite run --port yourport -h yourip
 If you don't specify `yourip` here, the development server will only listen to
 local connections, which means your Inkplate 6COLOR won't be able to fetch from
 it.
+
+
+#### Deploying To Production
+
+If you want to deploy this in production, you'll need something like uwsgi.
+
+You'll want to `pip install --no-binary pyuwsgi pyuwsgi` (see
+[Flask's documentation](https://flask.palletsprojects.com/en/latest/deploying/uwsgi/)
+for oher ways) and then use the `wsgi` stub script to launch the app, like
+this:
+
+```
+$ uwsgi --http-socket 127.0.0.1:8000 --master -p $(nproc) -w wsgi:app
+```
+
+It's a good idea to make your services actual systemd services, so use an unit
+file like this (adjust as appropriate):
+
+```
+[Unit]
+Description=Sunnesiite Flask Component
+After=network.target
+
+[Service]
+DynamicUser=true
+LogsDirectory=sunnesiite-flask
+StateDirectory=sunnesiite-flask
+
+AmbientCapabilities=
+CapabilityBoundingSet=
+LockPersonality=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+
+User=sunnesiite-flask
+Group=sunnesiite-flask
+ExecStart=/path/to/your/venv/bin/uwsgi --http-socket 127.0.0.1:8000 --master -p 8 -w wsgi:app -H /path/to/your/venv/
+WorkingDirectory=/path/to/sunnesiite/flask/
+Environment="PATH=/path/to/your/venv/bin"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then throw this behind e.g. an nginx reverse proxy.
+
+For VictoriaMetrics, I'd make doubly sure it only listens to connections from
+localhost, unless you are explicitly trying to use a remote VictoriaMetrics
+server and have auth stuff figured out (I don't).
+
+Please note that Fronius inverters seemingly only support pushing through plain
+text HTTP, not HTTPS. This will mean that your reverse proxy should accept
+connections on plain text HTTP and serve the web app there, not try to redirect
+to HTTPS.
