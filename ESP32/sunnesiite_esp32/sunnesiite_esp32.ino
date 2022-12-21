@@ -20,7 +20,7 @@
 #include "Inkplate.h"
 #include "config.h"
 
-#define REFRESH_INTERVAL_MINS 4
+#define REFRESH_INTERVAL_MINS 15
 
 Inkplate display;
 
