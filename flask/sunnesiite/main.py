@@ -39,11 +39,15 @@ def graph_line(draw, x1, y1, x2, fill):
 
 
 def fetch_day_energy(d1: datetime, d2: datetime) -> int:
+
+    d_now = datetime.now(timezone.utc)
+    diff_s = ceil((d_now - d1).total_seconds())
+
     params = urlencode(
         {
             "start": d1.isoformat(),
             "end": d2.isoformat(),
-            "query": 'power_day_energy{location="home"}',
+            "query": 'max_over_time(power_day_energy{location="home"}[' + str(diff_s) + 's])',
         }
     )
 
